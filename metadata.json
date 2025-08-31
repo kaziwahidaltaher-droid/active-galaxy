@@ -1,6 +1,9 @@
 {
   "name": "AURELION's Exoplanet Synthesis Engine (AXEE)",
   "description": "An AI-powered interface to discover and visualize new exoplanets, bringing cosmic data to life.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
   "prompt": ""
 }

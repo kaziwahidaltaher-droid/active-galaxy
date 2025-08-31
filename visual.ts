@@ -53,9 +53,15 @@ export class GdmLiveAudioVisuals extends LitElement {
   }
 
   private visualize() {
-    if (this.canvas && this.outputAnalyser) {
+    if (this.canvas && this.outputAnalyser && this.inputAnalyser) {
       const canvas = this.canvas;
       const canvasCtx = this.canvasCtx;
+
+      // Guard against the canvas context not being ready yet.
+      if (!canvasCtx) {
+        requestAnimationFrame(() => this.visualize());
+        return;
+      }
 
       const WIDTH = canvas.width;
       const HEIGHT = canvas.height;
