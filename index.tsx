@@ -1,3 +1,4 @@
+
 /* tslint:disable */
 /**
  * @license
@@ -14,6 +15,7 @@ interface PlanetData {
   celestial_body_id: string; // Unique ID
   planetName: string;
   starSystem: string;
+  starType: string;
   distanceLightYears: number;
   planetType: string;
   discoveryNarrative: string;
@@ -214,7 +216,48 @@ export class AxeeInterface extends LitElement {
       }
     }
 
+    .loader {
+      display: inline-block;
+      position: relative;
+      width: 2rem;
+      height: 2rem;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    .loader div {
+      box-sizing: border-box;
+      display: block;
+      position: absolute;
+      width: 1.8rem;
+      height: 1.8rem;
+      margin: 0.1rem;
+      border: 3px solid #0af;
+      border-radius: 50%;
+      animation: loader 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      border-color: #0af transparent transparent transparent;
+    }
+    .loader div:nth-child(1) {
+      animation-delay: -0.45s;
+    }
+    .loader div:nth-child(2) {
+      animation-delay: -0.3s;
+    }
+    .loader div:nth-child(3) {
+      animation-delay: -0.15s;
+    }
+    @keyframes loader {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
     .status-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-size: 1.2rem;
       letter-spacing: 0.1em;
       height: 2rem;
@@ -300,15 +343,20 @@ export class AxeeInterface extends LitElement {
     .discovery-list li {
       padding: 0.75rem 1rem;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, color 0.2s, border-color 0.2s;
       border-bottom: 1px solid rgba(0, 170, 255, 0.2);
+      border-left: 3px solid transparent;
     }
     .discovery-list li:hover {
       background-color: rgba(0, 170, 255, 0.2);
     }
     .discovery-list li.selected {
-      background-color: rgba(0, 170, 255, 0.4);
+      background-color: rgba(0, 200, 255, 0.5);
+      color: #0ff;
+      text-shadow: 0 0 15px #0ff;
       font-weight: bold;
+      border-left: 3px solid #0ff;
+      padding-left: calc(1rem - 3px);
     }
     .discovery-list li span {
       display: block;
@@ -340,11 +388,18 @@ export class AxeeInterface extends LitElement {
     }
 
     .details-panel h2 {
-      margin: 0 0 1rem 0;
+      margin: 0 0 0.25rem 0;
       font-size: 1.8rem;
       text-transform: uppercase;
-      border-bottom: 1px solid #0af;
-      padding-bottom: 0.5rem;
+    }
+
+    .details-panel p.planet-type {
+      margin: -0.5rem 0 1.5rem 0;
+      font-style: italic;
+      opacity: 0.8;
+      font-size: 1.1rem;
+      border-bottom: 1px solid rgba(0, 170, 255, 0.3);
+      padding-bottom: 1.5rem;
     }
 
     .details-panel h3 {
@@ -355,8 +410,19 @@ export class AxeeInterface extends LitElement {
       padding-top: 1rem;
     }
 
+    .details-panel h4 {
+      font-size: 1rem;
+      text-transform: uppercase;
+      margin-top: 1rem;
+      margin-bottom: 0.5rem;
+      color: #0cf;
+    }
+
     .ai-whisper-heading {
       color: #0cf;
+      border-top: none;
+      margin-top: 0;
+      padding-top: 0;
     }
 
     .ai-whisper {
@@ -489,7 +555,6 @@ export class AxeeInterface extends LitElement {
     }
     if (this.isSpeaking) {
       window.speechSynthesis.cancel();
-      this.isSpeaking = false;
     }
     this.recognition.start();
   }
@@ -540,6 +605,7 @@ export class AxeeInterface extends LitElement {
         "celestial_body_id": "string (A unique identifier, e.g., 'AXEE-12345')",
         "planetName": "string",
         "starSystem": "string",
+        "starType": "string (e.g., 'G-type star (Yellow Dwarf)', 'M-type red dwarf')",
         "distanceLightYears": number,
         "planetType": "string (e.g., 'Terrestrial Super-Earth', 'Gas Giant', 'Ice Giant')",
         "discoveryNarrative": "string (A short, engaging story of how this planet was 'discovered' by you, inspired by real discovery methods like transit photometry or radial velocity.)",
@@ -609,8 +675,15 @@ export class AxeeInterface extends LitElement {
     this.selectedPlanetId = e.detail.planetId;
   }
 
+  private _selectPlanet(planetId: string) {
+    this.selectedPlanetId = planetId;
+  }
+
   renderDetailsPanel() {
-    if (!this.selectedPlanetId || !this.discoveredPlanets.has(this.selectedPlanetId))
+    if (
+      !this.selectedPlanetId ||
+      !this.discoveredPlanets.has(this.selectedPlanetId)
+    )
       return nothing;
 
     const planet = this.discoveredPlanets.get(this.selectedPlanetId)!;
@@ -618,30 +691,33 @@ export class AxeeInterface extends LitElement {
     return html`
       <div class="details-panel ${this.selectedPlanetId ? 'visible' : ''}">
         <h2>${planet.planetName}</h2>
-        <p><strong>System:</strong> ${planet.starSystem}</p>
-        <p><strong>Type:</strong> ${planet.planetType}</p>
-        <p>
-          <strong>Distance:</strong> ${planet.distanceLightYears}
-          light-years
-        </p>
-        <p><em>${planet.discoveryNarrative}</em></p>
+        <p class="planet-type">${planet.planetType}</p>
 
         <h3 class="ai-whisper-heading">AI's Whisper</h3>
         <p class="ai-whisper">“${planet.aiWhisper}”</p>
 
-        <h3>Methodology</h3>
-        <p>${planet.discoveryMethodology}</p>
+        <h3>System Details</h3>
+        <p><strong>Star System:</strong> ${planet.starSystem}</p>
+        <p><strong>Host Star:</strong> ${planet.starType}</p>
+        <p>
+          <strong>Distance:</strong> ${planet.distanceLightYears} light-years
+        </p>
 
-        <h3>Atmosphere</h3>
-        <p>${planet.atmosphericComposition}</p>
-
-        <h3>Surface</h3>
-        <p>${planet.surfaceFeatures}</p>
-
-        <h3>Key Features:</h3>
+        <h3>Planet Characteristics</h3>
+        <p><strong>Atmosphere:</strong> ${planet.atmosphericComposition}</p>
+        <p><strong>Surface:</strong> ${planet.surfaceFeatures}</p>
+        <h4>Key Features</h4>
         <ul>
           ${planet.keyFeatures.map((feature) => html`<li>${feature}</li>`)}
         </ul>
+
+        <h3>Methodology</h3>
+        <p>
+          <strong>Discovery Narrative:</strong>
+          <em>${planet.discoveryNarrative}</em>
+        </p>
+        <p>${planet.discoveryMethodology}</p>
+
         ${this.groundingChunks.length > 0
           ? html`
               <h3>Data Sources</h3>
@@ -700,9 +776,8 @@ export class AxeeInterface extends LitElement {
                               ? 'selected'
                               : ''
                           }
-                          @click=${() => {
-                            this.selectedPlanetId = planet.celestial_body_id;
-                          }}>
+                          @click=${() =>
+                            this._selectPlanet(planet.celestial_body_id)}>
                           ${planet.planetName}
                           <span>${planet.planetType}</span>
                         </li>
@@ -729,21 +804,23 @@ export class AxeeInterface extends LitElement {
               }}
               ?disabled=${this.isLoading || this.hasStartedDiscovery}
               aria-label="Exoplanet synthesis command" />
-            ${this.micStream
-              ? html`
-                  <button
-                    class="mic-button ${this.isListening ? 'listening' : ''}"
-                    @click=${this.handleVoiceCommand}
-                    title="Speak Command"
-                    aria-label="Activate voice command"
-                    ?disabled=${this.hasStartedDiscovery}>
-                    <svg viewBox="0 0 24 24">
-                      <path
-                        d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z" />
-                    </svg>
-                  </button>
-                `
-              : nothing}
+            ${
+              this.micStream
+                ? html`
+                    <button
+                      class="mic-button ${this.isListening ? 'listening' : ''}"
+                      @click=${this.handleVoiceCommand}
+                      title="Speak Command"
+                      aria-label="Activate voice command"
+                      ?disabled=${this.hasStartedDiscovery}>
+                      <svg viewBox="0 0 24 24">
+                        <path
+                          d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z" />
+                      </svg>
+                    </button>
+                  `
+                : nothing
+            }
           </div>
 
           <div class="button-group">
@@ -762,7 +839,21 @@ export class AxeeInterface extends LitElement {
               ${this.micStream ? 'Audio Enabled' : 'Enable Audio'}
             </button>
           </div>
-          <div class="status-bar">${this.error || this.statusMessage}</div>
+          <div class="status-bar">
+            ${
+              this.isLoading
+                ? html`
+                    <div class="loader">
+                      <div></div>
+                      <div></div>
+                      <div></div>
+                      <div></div>
+                    </div>
+                    <span>${this.statusMessage}</span>
+                  `
+                : html`<span>${this.error || this.statusMessage}</span>`
+            }
+          </div>
         </footer>
       </div>
     `;

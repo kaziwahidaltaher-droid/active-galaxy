@@ -1,3 +1,4 @@
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -505,10 +506,23 @@ export class AxeeVisuals3D extends LitElement {
     if (this.aiEntity) {
       const material = this.aiEntity.material as THREE.ShaderMaterial;
       material.uniforms.uTime.value = elapsed;
+
       let targetState = 0;
       if (this.isListening) targetState = 1;
       else if (this.isSpeaking) targetState = 2;
       material.uniforms.uState.value = targetState;
+
+      // Add a scale animation for more pronounced feedback
+      const baseScale = 1.5;
+      let scale = baseScale;
+      if (this.isListening) {
+        // Gentle "breathing" effect
+        scale = baseScale + Math.sin(elapsed * 1.5) * 0.05;
+      } else if (this.isSpeaking) {
+        // Pulse in sync with the shader's color pulse
+        scale = baseScale + Math.abs(Math.sin(elapsed * 8.0) * 0.15);
+      }
+      this.aiEntity.scale.set(scale, scale, scale);
     }
 
     this.composer.render();
